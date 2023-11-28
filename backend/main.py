@@ -32,9 +32,6 @@ load_dotenv()
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=openai_api_key)
 
-# with open("index.html") as f:
-#     html = f.read()
-
 async def get_ai_response(message: str) -> AsyncGenerator[str, None]:
     """
     OpenAI Response
@@ -45,7 +42,7 @@ async def get_ai_response(message: str) -> AsyncGenerator[str, None]:
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant, skilled in explaining "
+                    "You are a helpful assistant for the company Westframework, skilled in explaining "
                     "complex concepts in simple terms."
                 ),
             },
@@ -63,13 +60,6 @@ async def get_ai_response(message: str) -> AsyncGenerator[str, None]:
         if content:
             all_content += content
             yield all_content
-
-# @app.get("/")
-# async def web_app() -> HTMLResponse:
-#     """
-#     Web App
-#     """
-#     return HTMLResponse(html)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> NoReturn:
