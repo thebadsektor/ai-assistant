@@ -4,6 +4,10 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Available Scripts
 
+Install dependencies
+`npm install @mui/material @emotion/react @emotion/styled`
+`npm install marked`
+
 In the project directory, you can run:
 
 ### `npm start`
