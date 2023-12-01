@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -17,30 +17,52 @@ const theme = createTheme({
   },
 });
 
+const WS_URL = "ws://localhost:8000/ws";
+const RECONNECT_INTERVAL = 2000; // 2 seconds for reconnection attempts
+
 function App() {
   const [response, setResponse] = useState("");
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // useMemo to initialize WebSocket
-  const WS = useMemo(() => new WebSocket("ws://localhost:8000/ws"), []);
+  const [websocket, setWebsocket] = useState(null);
 
   useEffect(() => {
-    WS.onmessage = (event) => {
+    connectWebSocket();
+
+    return () => {
+      if (websocket) websocket.close();
+    };
+  }, []);
+
+  const connectWebSocket = () => {
+    const ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log("WebSocket Connected");
+    };
+
+    ws.onmessage = (event) => {
       setLoading(false);
       setResponse(marked.parse(event.data));
     };
 
-    return () => {
-      WS.close();
+    ws.onclose = () => {
+      console.log("WebSocket Disconnected. Attempting to reconnect...");
+      setTimeout(connectWebSocket, RECONNECT_INTERVAL);
     };
-  }, [WS]); // Dependency array now correctly references the memoized WS
+
+    ws.onerror = (error) => {
+      console.error("WebSocket Error:", error);
+    };
+
+    setWebsocket(ws);
+  };
 
   const handleKeyUp = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && websocket && websocket.readyState === WebSocket.OPEN) {
       setResponse('');
       setLoading(true);
-      WS.send(question);
+      websocket.send(question);
     }
   };
 
@@ -50,7 +72,7 @@ function App() {
       <Container maxWidth="lg">
         <Box sx={{ my: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            AI Assistant 🤓
+            AI Assistant 🤓 v0.0.2
           </Typography>
           <TextField
             id="outlined-basic"
@@ -63,11 +85,13 @@ function App() {
             onKeyUp={handleKeyUp}
           />
         </Box>
-        {/* {!response && loading && <Typography>Loading...</Typography>} */}
-        {!response && loading && (<>
-                        <Skeleton />
-                        <Skeleton animation="wave" />
-                        <Skeleton animation={false} /></>)}
+        {!response && loading && (
+          <>
+            <Skeleton />
+            <Skeleton animation="wave" />
+            <Skeleton animation={false} />
+          </>
+        )}
         {response && <div dangerouslySetInnerHTML={{ __html: response }} />}
       </Container>
     </ThemeProvider>
