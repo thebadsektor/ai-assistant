@@ -7,7 +7,9 @@ import {
   Skeleton,
   createTheme,
   ThemeProvider,
-  CssBaseline
+  CssBaseline,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { marked } from 'marked';
 
@@ -70,6 +72,11 @@ function App() {
     }
   };
 
+  const handleToggleStreaming = (e) => {
+    setIsStreaming(e.target.checked)
+    console.log(isStreaming)
+  }
+
   const renderedResponse = marked.parse(response);
   // Add UI control for setting streaming mode (if desired)
 
@@ -81,6 +88,10 @@ function App() {
           <Typography variant="h4" component="h1" gutterBottom>
             AI Assistant 🤓 v0.0.2.1
           </Typography>
+          <div style={{display:'flex', flexDirection:'column', marginBottom:'15px'}} >
+            <FormControlLabel control={<Switch defaultChecked onChange={handleToggleStreaming} />} label="Stream Response" />
+            <FormControlLabel control={<Switch defaultChecked />} label="Use Context" />
+          </div>
           <TextField
             id="outlined-basic"
             label="Ask me Anything"
