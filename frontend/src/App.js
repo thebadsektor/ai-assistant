@@ -25,6 +25,7 @@ function App() {
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [websocket, setWebsocket] = useState(null);
+  const [isStreaming, setIsStreaming] = useState(false); // Add a state to control streaming
 
   useEffect(() => {
     connectWebSocket();
@@ -43,7 +44,9 @@ function App() {
 
     ws.onmessage = (event) => {
       setLoading(false);
-      setResponse(marked.parse(event.data));
+      setResponse(prev => prev + event.data); // Append new data
+      // setResponse(prev => prev + marked.parse(event.data)); // Append new data
+      // setResponse(marked.parse(event.data));
     };
 
     ws.onclose = () => {
@@ -62,9 +65,13 @@ function App() {
     if (e.key === "Enter" && websocket && websocket.readyState === WebSocket.OPEN) {
       setResponse('');
       setLoading(true);
-      websocket.send(question);
+      const message = JSON.stringify({ query: question, is_streaming: isStreaming });
+      websocket.send(message);
     }
   };
+
+  const renderedResponse = marked.parse(response);
+  // Add UI control for setting streaming mode (if desired)
 
   return (
     <ThemeProvider theme={theme}>
@@ -72,7 +79,7 @@ function App() {
       <Container maxWidth="lg">
         <Box sx={{ my: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            AI Assistant 🤓 v0.0.2
+            AI Assistant 🤓 v0.0.2.1
           </Typography>
           <TextField
             id="outlined-basic"
@@ -84,6 +91,7 @@ function App() {
             onChange={e => setQuestion(e.target.value)}
             onKeyUp={handleKeyUp}
           />
+          {/* Optionally add a switch or button to toggle isStreaming */}
         </Box>
         {!response && loading && (
           <>
@@ -92,7 +100,7 @@ function App() {
             <Skeleton animation={false} />
           </>
         )}
-        {response && <div dangerouslySetInnerHTML={{ __html: response }} />}
+        {response && <div dangerouslySetInnerHTML={{ __html: renderedResponse }} />}
       </Container>
     </ThemeProvider>
   );

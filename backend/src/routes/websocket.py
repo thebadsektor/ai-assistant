@@ -1,7 +1,11 @@
 from fastapi import APIRouter, WebSocket
-from ..services.openai_service import generate_inference
+from ..services.openai_service import generate_inference_streaming, generate_inference_non_streaming
+# ... other imports
+import json
 
 router = APIRouter()
+
+# A set to keep track of all connected WebSocket clients
 connected_clients = set()
 
 async def connect_client(websocket: WebSocket):
@@ -26,21 +30,21 @@ async def disconnect_client(websocket: WebSocket):
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """
-    WebSocket endpoint for generating OpenAI API inferences.
-
-    This endpoint accepts WebSocket connections, receives messages (queries),
-    and sends back generated responses using OpenAI's GPT model.
-    
-    Args:
-        websocket (WebSocket): The WebSocket connection for the current client.
-    """
     await connect_client(websocket)
     try:
         while True:
             message = await websocket.receive_text()
-            async for text in generate_inference(message):
-                await websocket.send_text(text)
+            request_data = json.loads(message)
+            query = request_data.get("query")
+            is_streaming = request_data.get("is_streaming", False)
+
+            if is_streaming:
+                async for text in generate_inference_streaming(query):
+                    await websocket.send_text(text)
+            else:
+                # Directly get and send the complete response for non-streaming
+                response = await generate_inference_non_streaming(query)
+                await websocket.send_text(response)
     except Exception as e:
         print(f"Error: {e}")
     finally:
