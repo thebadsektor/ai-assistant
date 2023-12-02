@@ -2,6 +2,11 @@ from typing import AsyncGenerator
 from ..config import Config
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -30,27 +35,32 @@ async def generate_inference_streaming(message: str) -> AsyncGenerator[str, None
     The function uses a streaming response, which is useful for handling long responses
     or for applications where you want to start processing the response before it's fully complete.
     """
-    response = await client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a helpful assistant for the company Westframework, skilled in explaining "
-                    "complex concepts in simple terms."
-                ),
-            },
-            {
-                "role": "user",
-                "content": message,
-            },
-        ],
-        stream=True,
-    )
-    async for chunk in response:
-        content = chunk.choices[0].delta.content
-        if content:
-            yield content
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant for the company Westframework, skilled in explaining "
+                        "complex concepts in simple terms."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": message,
+                },
+            ],
+            stream=True,
+        )
+        async for chunk in response:
+            content = chunk.choices[0].delta.content
+            if content:
+                yield content
+    except Exception as e:
+        logger.error(f"Error in generate_inference_streaming: {e}")
+        yield "An error occurred while processing your request."
+
 
 async def generate_inference_non_streaming(message: str) -> str:
     """
@@ -65,7 +75,8 @@ async def generate_inference_non_streaming(message: str) -> str:
     This function is suitable for applications that require the entire response at once.
     The response is not streamed and is returned after the complete processing of the user's message.
     """
-    response = await client.chat.completions.create(
+    try:
+        response = await client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {
@@ -81,13 +92,14 @@ async def generate_inference_non_streaming(message: str) -> str:
             },
         ],
         stream=False,
-    )
-    if response.choices:
-        # Concatenate text from all choices
-        all_content = ''.join([choice.message.content for choice in response.choices])
-        return all_content
-    else:
-        return "No response generated."
+        )
+        if response.choices:
+            return ''.join([choice.message.content for choice in response.choices])
+        else:
+            return "No response generated."
+    except Exception as e:
+        logger.error(f"Error in generate_inference_non_streaming: {e}")
+        return "An error occurred while processing your request."
 
 
 

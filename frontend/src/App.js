@@ -27,7 +27,7 @@ function App() {
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [websocket, setWebsocket] = useState(null);
-  const [isStreaming, setIsStreaming] = useState(false); // Add a state to control streaming
+  const [isStreaming, setIsStreaming] = useState(true); // Add a state to control streaming
 
   useEffect(() => {
     connectWebSocket();
